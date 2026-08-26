@@ -1,0 +1,272 @@
+# abloh borrow-lane fork proof.
+#
+# Shape mirrors product/apps/action/workflow-template.yml at main-v2: the repository's OWN setup,
+# install and build run first, and the abloh step runs last against whatever they left behind.
+# The abloh step here reproduces the merged borrow lane's own emission
+# (packages/engine-v2/src/execution/docker-runner.ts) rather than invoking the CLI, because the v2
+# engine is not published and must not be committed to a public fork.
+name: abloh borrow proof
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  borrow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      NODE_VERSION: "22"
+      INSTALL_CMD: "pnpm install --frozen-lockfile"
+      BUILD_CMD: "pnpm build"
+      SEALED_TEST_CMD: "node_modules/.bin/vitest run --root packages/vite"
+      PROOF_IMAGE: "node:22.23.1-bookworm-slim@sha256:6c74791e557ce11fc957704f6d4fe134a7bc8d6f5ca4403205b2966bd488f6b3"
+      REPO_LABEL: "vitejs/vite (mid)"
+      DOCKERFILE_B64: "RlJPTSBub2RlOjIyLjIzLjEtYm9va3dvcm0tc2xpbUBzaGEyNTY6NmM3NDc5MWU1NTdjZTExZmM5NTc3MDRmNmQ0ZmUxMzRhN2JjOGQ2ZjVjYTQ0MDMyMDViMjk2NmJkNDg4ZjZiMwpFTlYgQ0k9dHJ1ZQpFTlYgTEFORz1lbl9VUy5VVEYtOApFTlYgQ09SRVBBQ0tfSE9NRT0vYXR0ZXN0LXRvb2xjaGFpbi9jb3JlcGFjawpSVU4gWyJzaCIsIi1jIiwic2V0IC1lXG5pZiAhIGNvbW1hbmQgLXYgZ2l0ID4vZGV2L251bGwgMj4mMTsgdGhlblxuICBpZiBjb21tYW5kIC12IGFwdC1nZXQgPi9kZXYvbnVsbCAyPiYxOyB0aGVuXG4gICAgYXB0LWdldCB1cGRhdGUgJiYgYXB0LWdldCBpbnN0YWxsIC15IC0tbm8taW5zdGFsbC1yZWNvbW1lbmRzIGdpdCAmJiBybSAtcmYgL3Zhci9saWIvYXB0L2xpc3RzLypcbiAgICBjb21tYW5kIC12IGdpdCA+L2Rldi9udWxsIDI+JjEgfHwgeyBlY2hvIFwiYWJsb2g6IGluc3RhbGxlZCBnaXQgYnV0IGl0IGlzIG5vdCBvbiBQQVRIXCI7IGV4aXQgMTsgfVxuICBlbGlmIGNvbW1hbmQgLXYgYXBrID4vZGV2L251bGwgMj4mMTsgdGhlblxuICAgIGFwayBhZGQgLS1uby1jYWNoZSBnaXRcbiAgICBjb21tYW5kIC12IGdpdCA+L2Rldi9udWxsIDI+JjEgfHwgeyBlY2hvIFwiYWJsb2g6IGluc3RhbGxlZCBnaXQgYnV0IGl0IGlzIG5vdCBvbiBQQVRIXCI7IGV4aXQgMTsgfVxuICBlbHNlXG4gICAgZWNobyBcImFibG9oOiB0aGlzIGJhc2UgaW1hZ2UgY2FycmllcyBubyBnaXQgYW5kIG5vIHBhY2thZ2UgbWFuYWdlciB0byBpbnN0YWxsIG9uZSAtIGEgc3VpdGUgdGhhdCBzaGVsbHMgb3V0IHRvIGdpdCB3aWxsIGZhaWwgaW5zaWRlIHRoZSBzZWFsXCJcbiAgZmlcbmZpXG5pZiBjb21tYW5kIC12IGNvcmVwYWNrID4vZGV2L251bGwgMj4mMTsgdGhlblxuICBta2RpciAtcCAvYXR0ZXN0LXRvb2xjaGFpbi9jb3JlcGFja1xuICBpZiAhIGNvbW1hbmQgLXYgcG5wbSA+L2Rldi9udWxsIDI+JjE7IHRoZW5cbiAgICBjb3JlcGFjayBwcmVwYXJlIHBucG1AMTAuMTUuMCAtLWFjdGl2YXRlICYmIGNvcmVwYWNrIGVuYWJsZSBwbnBtXG4gICAgY29tbWFuZCAtdiBwbnBtID4vZGV2L251bGwgMj4mMSB8fCB7IGVjaG8gXCJhYmxvaDogaW5zdGFsbGVkIHBucG0gYnV0IGl0IGlzIG5vdCBvbiBQQVRIXCI7IGV4aXQgMTsgfVxuICBmaVxuICBpZiAhIGNvbW1hbmQgLXYgeWFybiA+L2Rldi9udWxsIDI+JjE7IHRoZW5cbiAgICBjb3JlcGFjayBwcmVwYXJlIHlhcm5ANC45LjIgLS1hY3RpdmF0ZSAmJiBjb3JlcGFjayBlbmFibGUgeWFyblxuICAgIGNvbW1hbmQgLXYgeWFybiA+L2Rldi9udWxsIDI+JjEgfHwgeyBlY2hvIFwiYWJsb2g6IGluc3RhbGxlZCB5YXJuIGJ1dCBpdCBpcyBub3Qgb24gUEFUSFwiOyBleGl0IDE7IH1cbiAgZmlcbiAgY2htb2QgLVIgYStyWCAvYXR0ZXN0LXRvb2xjaGFpbi9jb3JlcGFja1xuZmkiXQpSVU4gWyJzaCIsIi1jIiwic2V0IC1lXG5pZiBjb21tYW5kIC12IGFwdC1nZXQgPi9kZXYvbnVsbCAyPiYxOyB0aGVuXG4gIGV4cG9ydCBERUJJQU5fRlJPTlRFTkQ9bm9uaW50ZXJhY3RpdmVcbiAgYXB0LWdldCB1cGRhdGUgJiYgYXB0LWdldCBpbnN0YWxsIC15IC0tbm8taW5zdGFsbC1yZWNvbW1lbmRzIHB5dGhvbjMgbWFrZSBnKysgcGtnLWNvbmZpZyBmb250Y29uZmlnIGZvbnRzLWRlamF2dS1jb3JlIGZvbnRzLWxpYmVyYXRpb24gbGlib2RiYzIgJiYgcm0gLXJmIC92YXIvbGliL2FwdC9saXN0cy8qXG5lbGlmIGNvbW1hbmQgLXYgYXBrID4vZGV2L251bGwgMj4mMTsgdGhlblxuICBhcGsgYWRkIC0tbm8tY2FjaGUgcHl0aG9uMyBidWlsZC1iYXNlIHBrZ2NvbmYgZm9udGNvbmZpZyBmb250LWRlamF2dSB0dGYtbGliZXJhdGlvbiB1bml4b2RiY1xuZWxzZVxuICBlY2hvIFwiYWJsb2g6IHRoaXMgYmFzZSBpbWFnZSBoYXMgbm8gcGFja2FnZSBtYW5hZ2VyLCBzbyB0aGUgcHJvb2YgaW1hZ2UgY2FycmllcyBubyBidWlsZCB0b29sY2hhaW4gYW5kIG5vIGZvbnRzIC0gYSBzdWl0ZSB0aGF0IGNvbXBpbGVzIGEgbmF0aXZlIG1vZHVsZSBvciByZW5kZXJzIHRleHQgd2lsbCBmYWlsIGluc2lkZSB0aGUgc2VhbFwiXG5maSJdCldPUktESVIgL3dvcmsKQ09QWSAuIC93b3JrCldPUktESVIgL3dvcmsK"
+    steps:
+      - name: start the disk sampler
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/abloh"
+          : > "$RUNNER_TEMP/abloh/disk-samples.txt"
+          nohup bash -c 'while true; do
+            printf "%s %s\n" "$(date +%s)" "$(df --output=avail -B1 / | tail -1 | tr -d " ")" \
+              >> "'"$RUNNER_TEMP"'/abloh/disk-samples.txt"
+            sleep 3
+          done' >/dev/null 2>&1 &
+          echo "sampler pid $!"
+
+      - name: stage 0 - a bare runner
+        run: |
+          set -euo pipefail
+          bash -c '
+            printf "== df / ==\n"; df -B1 /
+            printf "== df -h ==\n"; df -h
+            printf "== docker ==\n"; docker --version; docker info --format "{{.Driver}} {{.DockerRootDir}}" || true
+          ' | tee "$RUNNER_TEMP/abloh/stage0.txt"
+          echo "S0_AVAIL=$(df --output=avail -B1 / | tail -1 | tr -d ' ')" >> "$GITHUB_ENV"
+          echo "S0_TOTAL=$(df --output=size -B1 / | tail -1 | tr -d ' ')" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: stage 1 - after checkout
+        run: |
+          set -euo pipefail
+          echo "S1_AVAIL=$(df --output=avail -B1 / | tail -1 | tr -d ' ')" >> "$GITHUB_ENV"
+          echo "S1_TREE=$(du -sb . | cut -f1)" >> "$GITHUB_ENV"
+          echo "S1_GIT=$(du -sb .git | cut -f1)" >> "$GITHUB_ENV"
+
+      # ---- the repository's own environment, unchanged from its own test job -------------------
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: corepack
+        run: corepack enable
+      - name: install (the repository's own command)
+        run: |
+          set -euo pipefail
+          /usr/bin/time -v -o "$RUNNER_TEMP/abloh/install.time" bash -c "$INSTALL_CMD" 2>&1 | tail -40
+          echo "INSTALL_SECONDS=$(grep -m1 'Elapsed (wall clock)' "$RUNNER_TEMP/abloh/install.time" | awk '{print $NF}')" >> "$GITHUB_ENV"
+      - name: stage 2 - after install
+        run: |
+          set -euo pipefail
+          echo "S2_AVAIL=$(df --output=avail -B1 / | tail -1 | tr -d ' ')" >> "$GITHUB_ENV"
+          echo "S2_TREE=$(du -sb . | cut -f1)" >> "$GITHUB_ENV"
+      - name: build (the repository's own command)
+        if: env.BUILD_CMD != ''
+        run: |
+          set -euo pipefail
+          /usr/bin/time -v -o "$RUNNER_TEMP/abloh/build.time" bash -c "$BUILD_CMD" 2>&1 | tail -40
+          echo "BUILD_SECONDS=$(grep -m1 'Elapsed (wall clock)' "$RUNNER_TEMP/abloh/build.time" | awk '{print $NF}')" >> "$GITHUB_ENV"
+
+      # ---- abloh. Everything below is the borrow lane. -----------------------------------------
+      - name: stage 3 - the prepared tree abloh is about to borrow
+        run: |
+          set -euo pipefail
+          echo "S3_AVAIL=$(df --output=avail -B1 / | tail -1 | tr -d ' ')" >> "$GITHUB_ENV"
+          echo "S3_TREE=$(du -sb . | cut -f1)" >> "$GITHUB_ENV"
+          {
+            echo "== the ten largest directories in the tree abloh will copy =="
+            du -b -d 3 . 2>/dev/null | sort -rn | head -20
+            echo "== node_modules =="
+            du -sb node_modules 2>/dev/null || echo "no node_modules at the root"
+            echo "== .git =="
+            du -sb .git
+            echo "== a .dockerignore in the context root? =="
+            if [ -f .dockerignore ]; then echo "PRESENT"; cat .dockerignore; else echo "absent"; fi
+          } | tee "$RUNNER_TEMP/abloh/tree.txt"
+          # findPreparedTree (apps/cli/src/environment-source.ts): the fact the selection rule reads
+          if [ -d node_modules ]; then
+            echo "PREPARED_TREE=node_modules" >> "$GITHUB_ENV"
+          elif [ -f .pnp.cjs ]; then
+            echo "PREPARED_TREE=.pnp.cjs" >> "$GITHUB_ENV"
+          else
+            echo "PREPARED_TREE=NONE" >> "$GITHUB_ENV"
+          fi
+
+      - name: the inherited-environment fingerprint
+        run: |
+          set -euo pipefail
+          node -e '
+            const { execSync } = require("node:child_process");
+            const { createHash } = require("node:crypto");
+            const fs = require("node:fs");
+            const read = (c) => { try { return execSync(c, {encoding:"utf8"}).trim(); } catch { return null; } };
+            const LOCKS = [".yarn/install-state.gz","bun.lock","bun.lockb","deno.lock",
+              "node_modules/.modules.yaml","node_modules/.package-lock.json","npm-shrinkwrap.json",
+              "package-lock.json","Pipfile.lock","pnpm-lock.yaml","poetry.lock","uv.lock","yarn.lock"];
+            const lockfiles = LOCKS.filter((p) => fs.existsSync(p)).map((p) => ({
+              path: p,
+              digest: createHash("sha256").update(fs.readFileSync(p)).digest("hex"),
+            }));
+            let packageManager = null;
+            try { packageManager = JSON.parse(fs.readFileSync("package.json","utf8")).packageManager ?? null; } catch {}
+            const inherited = {
+              node: read("node --version"),
+              packageManager,
+              runtimes: [],
+              lockfiles,
+              runnerImage: {
+                imageOs: process.env.ImageOS ?? null,
+                imageVersion: process.env.ImageVersion ?? null,
+                platform: process.env.RUNNER_OS ?? null,
+                arch: process.env.RUNNER_ARCH ?? null,
+              },
+            };
+            fs.writeFileSync(process.env.RUNNER_TEMP + "/abloh/inherited.json", JSON.stringify(inherited, null, 2));
+            console.log(JSON.stringify(inherited, null, 2));
+          '
+
+      - name: write the borrowed-build Dockerfile
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/abloh"
+          printf '%s' "$DOCKERFILE_B64" | base64 -d > "$RUNNER_TEMP/abloh/Dockerfile"
+          # docker-runner.ts: a borrowed build writes its own EMPTY sibling ignore file so the
+          # customer's own .dockerignore cannot silently strip node_modules out of the borrow.
+          printf '# Abloh borrows the tree your CI built, whole. Nothing is excluded.\n' \
+            > "$RUNNER_TEMP/abloh/Dockerfile.dockerignore"
+          cat "$RUNNER_TEMP/abloh/Dockerfile"
+
+      - name: docker build - the only phase with a network, and it runs no customer command
+        run: |
+          set -euo pipefail
+          start=$(date +%s)
+          DOCKER_BUILDKIT=1 docker build --network default \
+            -f "$RUNNER_TEMP/abloh/Dockerfile" -t abloh-borrow:proof . 2>&1 | tail -60
+          echo "IMAGE_SECONDS=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
+          echo "S4_AVAIL=$(df --output=avail -B1 / | tail -1 | tr -d ' ')" >> "$GITHUB_ENV"
+          echo "IMAGE_BYTES=$(docker image inspect abloh-borrow:proof --format '{{.Size}}')" >> "$GITHUB_ENV"
+          echo "BASE_BYTES=$(docker image inspect "$PROOF_IMAGE" --format '{{.Size}}' 2>/dev/null || echo 0)" >> "$GITHUB_ENV"
+
+      - name: did the tree actually arrive, whole
+        run: |
+          set -euo pipefail
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            abloh-borrow:proof sh -c '
+              cd /work
+              printf "node_modules entries: "; (ls node_modules 2>/dev/null | wc -l) || echo 0
+              printf ".git present: "; ([ -d .git ] && echo yes || echo NO)
+              printf "pnp: "; ([ -f .pnp.cjs ] && echo yes || echo no)
+              printf "work bytes: "; du -sb /work | cut -f1
+            ' | tee "$RUNNER_TEMP/abloh/arrival.txt"
+
+      - name: the seal, proved rather than asserted
+        run: |
+          set -euo pipefail
+          export ABLOH_HOST_SECRET_CANARY=this-must-not-be-visible-inside-the-seal
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            --pids-limit 512 --memory 4g \
+            abloh-borrow:proof sh -c '
+              echo "== interfaces =="; (ip -o addr 2>/dev/null || cat /proc/net/dev)
+              echo "== dns =="; (getent hosts github.com && echo "RESOLVED - SEAL BROKEN") || echo "no dns"
+              echo "== tcp =="; (timeout 5 sh -c "echo > /dev/tcp/1.1.1.1/443" 2>/dev/null && echo "CONNECTED - SEAL BROKEN") || echo "no tcp"
+              echo "== host canary =="; (env | grep -c ABLOH_HOST_SECRET_CANARY || true)
+            ' | tee "$RUNNER_TEMP/abloh/seal-proof.txt"
+
+      - name: the sealed run, on the borrowed tree
+        id: sealed
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          start=$(date +%s)
+          set +e
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            --pids-limit 512 --memory 4g \
+            abloh-borrow:proof sh -c "cd /work && $SEALED_TEST_CMD" \
+            > "$RUNNER_TEMP/abloh/sealed-run.log" 2>&1
+          code=$?
+          set -e
+          echo "SEALED_EXIT=$code" >> "$GITHUB_ENV"
+          echo "SEALED_SECONDS=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
+          echo "S5_AVAIL=$(df --output=avail -B1 / | tail -1 | tr -d ' ')" >> "$GITHUB_ENV"
+          tail -60 "$RUNNER_TEMP/abloh/sealed-run.log"
+          exit 0
+
+      - name: the numbers
+        if: always()
+        run: |
+          set -uo pipefail
+          T="$RUNNER_TEMP/abloh"
+          min_free=$(sort -k2 -n "$T/disk-samples.txt" | head -1 | awk '{print $2}')
+          : "${min_free:=0}"
+          gb() { awk -v b="${1:-0}" 'BEGIN{printf "%.2f", b/1073741824}'; }
+          peak_used=$(( ${S0_AVAIL:-0} - min_free ))
+          {
+            echo "## abloh borrow proof - $REPO_LABEL"
+            echo
+            echo "| stage | free on / | tree |"
+            echo "|---|---|---|"
+            echo "| 0 bare runner | $(gb ${S0_AVAIL:-0}) GB | - |"
+            echo "| 1 after checkout | $(gb ${S1_AVAIL:-0}) GB | $(gb ${S1_TREE:-0}) GB (.git $(gb ${S1_GIT:-0}) GB) |"
+            echo "| 2 after install | $(gb ${S2_AVAIL:-0}) GB | $(gb ${S2_TREE:-0}) GB |"
+            echo "| 3 after build | $(gb ${S3_AVAIL:-0}) GB | $(gb ${S3_TREE:-0}) GB |"
+            echo "| 4 after image build | $(gb ${S4_AVAIL:-0}) GB | image $(gb ${IMAGE_BYTES:-0}) GB |"
+            echo "| 5 after sealed run | $(gb ${S5_AVAIL:-0}) GB | - |"
+            echo
+            echo "- total on /: $(gb ${S0_TOTAL:-0}) GB"
+            echo "- minimum free ever observed: $(gb $min_free) GB"
+            echo "- peak used by this job: $(gb $peak_used) GB"
+            echo "- prepared tree evidence: ${PREPARED_TREE:-unknown}"
+            echo "- install ${INSTALL_SECONDS:-n/a}, build ${BUILD_SECONDS:-n/a}, image ${IMAGE_SECONDS:-n/a}s, sealed ${SEALED_SECONDS:-n/a}s"
+            echo "- sealed exit: ${SEALED_EXIT:-n/a}"
+          } | tee "$T/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          node -e '
+            const fs=require("node:fs"); const e=process.env; const t=e.RUNNER_TEMP+"/abloh";
+            const n=(k)=>e[k]?Number(e[k]):null;
+            let samples=[];
+            try { samples=fs.readFileSync(t+"/disk-samples.txt","utf8").trim().split("\n")
+              .filter(Boolean).map((l)=>Number(l.split(" ")[1])).filter((x)=>Number.isFinite(x)); } catch {}
+            const minFree=samples.length?Math.min(...samples):null;
+            let inherited=null;
+            try { inherited=JSON.parse(fs.readFileSync(t+"/inherited.json","utf8")); } catch {}
+            fs.writeFileSync(t+"/result.json", JSON.stringify({
+              repo: e.REPO_LABEL, runId: e.GITHUB_RUN_ID, sha: e.GITHUB_SHA,
+              proofImage: e.PROOF_IMAGE,
+              disk: { totalBytes: n("S0_TOTAL"), stage0Avail: n("S0_AVAIL"), stage1Avail: n("S1_AVAIL"),
+                stage2Avail: n("S2_AVAIL"), stage3Avail: n("S3_AVAIL"), stage4Avail: n("S4_AVAIL"),
+                stage5Avail: n("S5_AVAIL"), minFreeBytes: minFree,
+                peakUsedBytes: minFree === null ? null : n("S0_AVAIL") - minFree },
+              tree: { checkoutBytes: n("S1_TREE"), gitBytes: n("S1_GIT"),
+                installedBytes: n("S2_TREE"), builtBytes: n("S3_TREE") },
+              image: { bytes: n("IMAGE_BYTES"), baseBytes: n("BASE_BYTES"), buildSeconds: n("IMAGE_SECONDS") },
+              timings: { install: e.INSTALL_SECONDS ?? null, build: e.BUILD_SECONDS ?? null,
+                image: n("IMAGE_SECONDS"), sealed: n("SEALED_SECONDS") },
+              preparedTree: e.PREPARED_TREE ?? null,
+              sealedExit: n("SEALED_EXIT"),
+              inherited,
+            }, null, 2));
+          '
+          cat "$T/result.json"
+          exit 0
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: abloh-borrow-proof
+          path: ${{ runner.temp }}/abloh
+          retention-days: 90
