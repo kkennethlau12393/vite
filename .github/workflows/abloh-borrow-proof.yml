@@ -86,7 +86,8 @@ jobs:
       # ---- abloh. Everything below is the borrow lane. -----------------------------------------
       - name: stage 3 - the prepared tree abloh is about to borrow
         run: |
-          set -uo pipefail
+          set +e
+          set -o pipefail
           echo "S3_AVAIL=$(df --output=avail -B1 / | tail -1 | tr -d ' ')" >> "$GITHUB_ENV"
           echo "S3_TREE=$(du -sb . | cut -f1)" >> "$GITHUB_ENV"
           {
@@ -154,7 +155,8 @@ jobs:
 
       - name: docker build - the only phase with a network, and it runs no customer command
         run: |
-          set -uo pipefail
+          set +e
+          set -o pipefail
           start=$(date +%s)
           DOCKER_BUILDKIT=1 docker build --network default \
             -f "$RUNNER_TEMP/abloh/Dockerfile" -t abloh-borrow:proof . \
@@ -227,7 +229,8 @@ jobs:
       - name: the same sealed run with the pid ceiling raised
         if: always() && env.SEALED_EXIT != '0'
         run: |
-          set -uo pipefail
+          set +e
+          set -o pipefail
           start=$(date +%s)
           set +e
           docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
@@ -245,7 +248,8 @@ jobs:
       - name: the numbers
         if: always()
         run: |
-          set -uo pipefail
+          set +e
+          set -o pipefail
           T="$RUNNER_TEMP/abloh"
           min_free=$(sort -k2 -n "$T/disk-samples.txt" | head -1 | awk '{print $2}')
           : "${min_free:=0}"
