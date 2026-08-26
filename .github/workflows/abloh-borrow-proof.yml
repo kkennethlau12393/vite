@@ -86,19 +86,19 @@ jobs:
       # ---- abloh. Everything below is the borrow lane. -----------------------------------------
       - name: stage 3 - the prepared tree abloh is about to borrow
         run: |
-          set -euo pipefail
+          set -uo pipefail
           echo "S3_AVAIL=$(df --output=avail -B1 / | tail -1 | tr -d ' ')" >> "$GITHUB_ENV"
           echo "S3_TREE=$(du -sb . | cut -f1)" >> "$GITHUB_ENV"
           {
             echo "== the ten largest directories in the tree abloh will copy =="
-            du -b -d 3 . 2>/dev/null | sort -rn | head -20
+            du -b -d 3 . 2>/dev/null | sort -rn | head -20 || true
             echo "== node_modules =="
             du -sb node_modules 2>/dev/null || echo "no node_modules at the root"
             echo "== .git =="
             du -sb .git
             echo "== a .dockerignore in the context root? =="
             if [ -f .dockerignore ]; then echo "PRESENT"; cat .dockerignore; else echo "absent"; fi
-          } | tee "$RUNNER_TEMP/abloh/tree.txt"
+          } | tee "$RUNNER_TEMP/abloh/tree.txt" || true
           # findPreparedTree (apps/cli/src/environment-source.ts): the fact the selection rule reads
           if [ -d node_modules ]; then
             echo "PREPARED_TREE=node_modules" >> "$GITHUB_ENV"
