@@ -154,26 +154,31 @@ jobs:
 
       - name: docker build - the only phase with a network, and it runs no customer command
         run: |
-          set -euo pipefail
+          set -uo pipefail
           start=$(date +%s)
           DOCKER_BUILDKIT=1 docker build --network default \
-            -f "$RUNNER_TEMP/abloh/Dockerfile" -t abloh-borrow:proof . 2>&1 | tail -60
+            -f "$RUNNER_TEMP/abloh/Dockerfile" -t abloh-borrow:proof . \
+            > "$RUNNER_TEMP/abloh/image-build.log" 2>&1
+          code=$?
           echo "IMAGE_SECONDS=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
           echo "S4_AVAIL=$(df --output=avail -B1 / | tail -1 | tr -d ' ')" >> "$GITHUB_ENV"
+          tail -40 "$RUNNER_TEMP/abloh/image-build.log"
+          if [ "$code" -ne 0 ]; then echo "IMAGE_BUILD_FAILED=1" >> "$GITHUB_ENV"; exit "$code"; fi
           # `docker image inspect .Size` is the CONTENT size on a containerd image store and the
-          # UNPACKED size on the classic one - measured 4x apart on the same image. Both are
-          # recorded, and the disk delta above is the number that decides the 14 GB question.
-          num() { printf '%s' "${1:-0}" | tr -dc '0-9'; }
-          img=$(docker image inspect abloh-borrow:proof --format '{{.Size}}' 2>/dev/null | head -1)
-          base=$(docker image inspect "$PROOF_IMAGE" --format '{{.Size}}' 2>/dev/null | head -1)
-          echo "IMAGE_BYTES=$(num "$img")" >> "$GITHUB_ENV"
-          echo "BASE_BYTES=$(num "$base")" >> "$GITHUB_ENV"
-          docker version --format '{{.Server.Version}}' > "$RUNNER_TEMP/abloh/docker-version.txt" 2>/dev/null || true
-          docker system df -v > "$RUNNER_TEMP/abloh/docker-df.txt" 2>&1 || true
-          docker buildx du > "$RUNNER_TEMP/abloh/buildx-du.txt" 2>&1 || true
-          docker images --format '{{.Repository}}:{{.Tag}} {{.Size}}' >> "$RUNNER_TEMP/abloh/docker-df.txt" 2>&1 || true
-          cat "$RUNNER_TEMP/abloh/docker-df.txt" | head -20
-          tail -3 "$RUNNER_TEMP/abloh/buildx-du.txt" || true
+          # UNPACKED size on the classic overlay2 one - measured 4x apart on the same image. It is
+          # recorded, but the df delta above is the number that decides the disk question.
+          img=$(docker image inspect abloh-borrow:proof --format '{{.Size}}' 2>/dev/null)
+          base=$(docker image inspect "$PROOF_IMAGE" --format '{{.Size}}' 2>/dev/null)
+          echo "IMAGE_BYTES=$(printf '%s' "$img" | tr -dc '0-9')" >> "$GITHUB_ENV"
+          echo "BASE_BYTES=$(printf '%s' "$base" | tr -dc '0-9')" >> "$GITHUB_ENV"
+          docker version --format '{{.Server.Version}}' > "$RUNNER_TEMP/abloh/docker-version.txt" 2>/dev/null
+          docker system df -v > "$RUNNER_TEMP/abloh/docker-df.txt" 2>&1
+          docker images --format '{{.Repository}}:{{.Tag}} {{.Size}}' >> "$RUNNER_TEMP/abloh/docker-df.txt" 2>&1
+          docker buildx du > "$RUNNER_TEMP/abloh/buildx-du.txt" 2>&1
+          echo "BUILD_CACHE=$(grep -a '^Total:' "$RUNNER_TEMP/abloh/buildx-du.txt" | tail -1 | tr -dc '0-9.GMKB')" >> "$GITHUB_ENV"
+          head -25 "$RUNNER_TEMP/abloh/docker-df.txt"
+          tail -3 "$RUNNER_TEMP/abloh/buildx-du.txt"
+          exit 0
 
       - name: did the tree actually arrive, whole
         run: |
@@ -264,6 +269,7 @@ jobs:
             echo "- prepared tree evidence: ${PREPARED_TREE:-unknown}"
             echo "- install ${INSTALL_SECONDS:-n/a}, build ${BUILD_SECONDS:-n/a}, image ${IMAGE_SECONDS:-n/a}s, sealed ${SEALED_SECONDS:-n/a}s"
             echo "- sealed exit: ${SEALED_EXIT:-n/a}; with --pids-limit 4096: ${SEALED_PIDS4096_EXIT:-not needed}"
+            echo "- build cache after the image build: ${BUILD_CACHE:-unknown}"
             echo "- cores: $(nproc) · docker $(cat "$T/docker-version.txt" 2>/dev/null || echo unknown)"
           } | tee "$T/summary.md" >> "$GITHUB_STEP_SUMMARY"
           node -e '
@@ -291,6 +297,7 @@ jobs:
               sealedExit: n("SEALED_EXIT"),
               sealedExitPids4096: n("SEALED_PIDS4096_EXIT"),
               cores: Number(require("node:os").cpus().length),
+              buildCache: e.BUILD_CACHE ?? null,
               inherited,
             }, null, 2));
           '
