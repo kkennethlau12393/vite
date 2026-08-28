@@ -1,0 +1,46 @@
+name: Abloh
+on:
+  pull_request:
+
+jobs:
+  abloh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # short-lived identity for the Abloh model gateway
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0 # Abloh diffs against the base ref
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json # the Node engines.node in package.json admits
+      # Your build, whole, from the one file that holds it: .abloh/setup.sh.
+      # The step below runs it, inside Abloh, before anything is measured. Edit that file,
+      # not this workflow - and a step of it that fails is reported as a failed step of yours,
+      # by number, on your pull request, rather than as a shell error in this job's log.
+      - uses: Vero-Technology/abloh-action@596ef9a2ed0e0570244e6575faee05c285ea0376
+        with:
+          # ADDED BY THE ABLOH FIRST-CONTACT CENSUS: this run measures a build of the product
+          # rather than the published CLI. Recorded in every row this workflow produced.
+          cli-tarball: .abloh-census/engine/abloh-cli-0.1.4.tgz .abloh-census/engine/abloh-core-0.1.3.tgz .abloh-census/engine/abloh-engine-python-0.1.2.tgz .abloh-census/engine/abloh-engine-stryker-0.1.3.tgz .abloh-census/engine/abloh-engine-v2-0.1.0.tgz .abloh-census/engine/abloh-replay-0.1.0.tgz .abloh-census/engine/abloh-sandbox-0.1.2.tgz .abloh-census/engine/abloh-stryker-angular-runner-0.1.0.tgz .abloh-census/engine/abloh-stryker-ava-runner-0.1.0.tgz .abloh-census/engine/abloh-stryker-bun-runner-0.1.0.tgz .abloh-census/engine/abloh-stryker-node-test-runner-0.1.0.tgz .abloh-census/engine/abloh-triage-0.1.2.tgz
+          base: ${{ github.event.pull_request.base.sha }}
+      # ---------------------------------------------------------------------------------
+      # ADDED BY THE ABLOH FIRST-CONTACT CENSUS, and it is the only line of this file that
+      # is not what `abloh init` wrote. It keeps the run's own artifact so the census can
+      # classify from evidence rather than from this job's log. It runs after everything
+      # Abloh does and cannot reach what was measured.
+      # ---------------------------------------------------------------------------------
+      - name: census - keep the run artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: abloh-census-evidence
+          path: |
+            ${{ runner.temp }}/abloh/${{ github.run_id }}-${{ github.run_attempt }}/attest-results.json
+            ${{ runner.temp }}/abloh/${{ github.run_id }}-${{ github.run_attempt }}/attest-summary.md
+            ${{ runner.temp }}/abloh/${{ github.run_id }}-${{ github.run_attempt }}/abloh-engine-v2-proofs.json
+          if-no-files-found: ignore
+          retention-days: 30
