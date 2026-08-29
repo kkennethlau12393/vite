@@ -1,4 +1,5 @@
 import { exec } from 'node:child_process'
+// abloh borrow proof: one trivial change to covered production code.
 import crypto from 'node:crypto'
 import { promises as dns } from 'node:dns'
 import fs from 'node:fs'
